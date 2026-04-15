@@ -303,46 +303,25 @@ COI_DATABASE = [
 ]
 
 
+# Load the database into a custom HashMap for storage and lookup.
+# The HashMap maps species name -> sequence entry dict.
+from data_structures.hash_map import HashMap
+
+_database = HashMap()
+for _entry in COI_DATABASE:
+    _database.put(_entry["species"], _entry)
+
+
 def get_all_sequences():
-    """Return all COI barcode sequences."""
-    return COI_DATABASE
-
-
-def get_sequences_by_group(group_name):
-    """Return COI sequences for a specific taxonomic group.
-
-    Args:
-        group_name: One of "Mammals", "Birds", "Fish", "Insects", "Reptiles", "Amphibians"
-    """
-    return [entry for entry in COI_DATABASE if entry["group"] == group_name]
+    """Return all COI barcode sequences from the HashMap."""
+    return _database.values()
 
 
 def get_sequence_by_species(species_name):
-    """Return a single COI sequence entry for a given species name.
-
-    Args:
-        species_name: Scientific name, e.g. "Homo sapiens"
-    """
-    for entry in COI_DATABASE:
-        if entry["species"] == species_name:
-            return entry
-    return None
+    """Look up a single species entry by scientific name using the HashMap."""
+    return _database.get(species_name)
 
 
 def get_species_list():
-    """Return a list of all species names in the database."""
-    return [entry["species"] for entry in COI_DATABASE]
-
-
-if __name__ == "__main__":
-    print(f"COI Barcode Database: {len(COI_DATABASE)} sequences")
-    print()
-    groups = {}
-    for entry in COI_DATABASE:
-        g = entry["group"]
-        groups[g] = groups.get(g, 0) + 1
-    for group, count in sorted(groups.items()):
-        print(f"  {group}: {count} species")
-    print()
-    for entry in COI_DATABASE:
-        print(f"  {entry['common_name']:.<30} {entry['species']:.<35} {entry['accession']:<15} {len(entry['sequence'])}bp")
+    """Return a list of all species names (keys) from the HashMap."""
+    return _database.keys()

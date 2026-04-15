@@ -224,31 +224,27 @@ def generate_insight(best_match, lcs_results, top_for_mst, mst_edges, input_gc, 
     if strength in ("exact", "strong"):
         dominant_group = group
 
-    if dominant_count >= 5:
-        details.append(
-            f"The top 10 matches are dominated by {dominant_group} "
-            f"({dominant_count} of 10), strongly suggesting your sequence belongs to this taxonomic group."
-        )
-    elif strength in ("exact", "strong"):
+    if strength in ("exact", "strong"):
+        # High confidence — trust the best match's group
         other_groups = [f"{g} ({c})" for g, c in sorted_groups if g != group]
-        other_str = ", ".join(other_groups) if other_groups else "other groups"
+        other_str = ", ".join(other_groups) if other_groups else "no other groups"
         details.append(
             f"Based on the {score*100:.1f}% match to {species}, your sequence belongs to the "
             f"{group} group. Other groups in the top 10: {other_str}."
         )
-    elif dominant_count >= 3:
-        other_groups = [f"{g} ({c})" for g, c in sorted_groups[1:] if c >= 2]
-        other_str = " and ".join(other_groups) if other_groups else "other groups"
+    elif strength == "moderate":
+        # Moderate confidence — mention best match but note uncertainty
         details.append(
-            f"The top 10 matches include {dominant_count} {dominant_group} species, "
-            f"along with {other_str}. "
-            f"Your sequence most likely belongs to the {dominant_group} group."
+            f"The closest match is {species} ({group}) at {score*100:.1f}%, but the similarity "
+            f"is not high enough for a definitive classification. "
+            f"Top 10 breakdown: {', '.join(f'{g}: {c}' for g, c in sorted_groups)}."
         )
     else:
+        # Weak match — don't claim any group
         details.append(
-            f"The top matches are spread across multiple groups "
-            f"({', '.join(f'{g}: {c}' for g, c in sorted_groups)}), "
-            f"making taxonomic classification uncertain."
+            f"With only {score*100:.1f}% similarity to the closest match, taxonomic classification "
+            f"is unreliable. The low similarity suggests your sequence may come from a species "
+            f"not represented in the database."
         )
 
     # GC content insight
@@ -300,10 +296,29 @@ def generate_insight(best_match, lcs_results, top_for_mst, mst_edges, input_gc, 
                     f"({', '.join(conn_names)}), confirming it belongs to this cluster."
                 )
             elif len(conn_names) > 0:
-                details.append(
-                    f"In the relationship tree, your input connects to {', '.join(conn_names)}, "
-                    f"placing it within the {dominant_group.lower()} region of the tree."
-                )
+                # Describe the actual connections honestly
+                conn_desc = []
+                for name, grp in zip(conn_names, conn_groups):
+                    conn_desc.append(f"{name} ({grp})")
+                unique_groups = list(set(conn_groups))
+
+                if len(unique_groups) == 1:
+                    details.append(
+                        f"In the relationship tree, your input connects to {', '.join(conn_desc)}, "
+                        f"placing it near the {unique_groups[0].lower()} cluster."
+                    )
+                elif strength in ("exact", "strong"):
+                    # High confidence match — MST multi-group connections are just tree structure
+                    details.append(
+                        f"In the relationship tree, your input connects to {', '.join(conn_desc)}. "
+                        f"The connection to other groups is due to how the tree links all species — "
+                        f"the {score*100:.1f}% match to {species} confirms your sequence is {group.lower()}."
+                    )
+                else:
+                    details.append(
+                        f"In the relationship tree, your input connects to {', '.join(conn_desc)} — "
+                        f"spanning multiple groups, which reflects the ambiguity of this match."
+                    )
 
     # Filtering insight
     excluded = len(all_sequences) - len(filtered)

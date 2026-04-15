@@ -150,10 +150,13 @@ def _get_graph_style(input_label, top_matches):
     return group_colors, node_groups
 
 
-def _draw_graph(ax, nx_graph, pos, node_groups, group_colors, input_label, title, show_edge_labels=True):
+def _draw_graph(ax, nx_graph, pos, node_groups, group_colors, input_label, title,
+                show_edge_labels=True, color_by_group=False):
     """
     Draw a graph on the given axes with consistent styling.
     Shared by both the complete graph and the MST visualization.
+    If color_by_group is True, edges between same-group nodes are colored
+    with that group's color (brighter, thicker) to highlight clusters.
     """
     ax.set_facecolor('#1a1a2e')
 
@@ -164,22 +167,58 @@ def _draw_graph(ax, nx_graph, pos, node_groups, group_colors, input_label, title
         color = group_colors.get(group, "#CCCCCC")
         node_colors.append(color)
 
-    # Draw edges with varying thickness based on similarity
+    # Draw edges
     edge_weights = nx.get_edge_attributes(nx_graph, 'weight')
     for (u, v), w in edge_weights.items():
         similarity = 1 - w
-        line_width = 1 + similarity * 4
-        alpha = 0.3 + similarity * 0.5
+
+        # Check if both nodes are in the same group (excluding Input)
+        group_u = node_groups.get(u, "Unknown")
+        group_v = node_groups.get(v, "Unknown")
+        same_group = (group_u == group_v and group_u != "Input" and group_u != "Unknown")
+
+        if color_by_group and same_group:
+            # Same-group edge: use the group's color, thick and bright
+            edge_color = group_colors.get(group_u, "#88ccff")
+            line_width = 2.5 + similarity * 4
+            alpha = 0.7 + similarity * 0.3
+        elif color_by_group:
+            # Cross-group edge: thin, faint gray
+            edge_color = '#445566'
+            line_width = 0.5 + similarity * 1.5
+            alpha = 0.15 + similarity * 0.15
+        else:
+            # Default styling (for MST)
+            edge_color = '#88ccff'
+            line_width = 1 + similarity * 4
+            alpha = 0.3 + similarity * 0.5
+
         nx.draw_networkx_edges(
             nx_graph, pos, ax=ax,
             edgelist=[(u, v)],
             width=line_width, alpha=alpha,
-            edge_color='#88ccff',
+            edge_color=edge_color,
             style='solid'
         )
 
-    # Draw edge labels (similarity %)
-    if show_edge_labels:
+    # Draw edge labels for same-group edges in the complete graph
+    if color_by_group:
+        same_group_labels = {}
+        for (u, v), w in edge_weights.items():
+            group_u = node_groups.get(u, "Unknown")
+            group_v = node_groups.get(v, "Unknown")
+            if group_u == group_v and group_u != "Input" and group_u != "Unknown":
+                similarity_pct = round((1 - w) * 100, 1)
+                same_group_labels[(u, v)] = f"{similarity_pct}%"
+        if same_group_labels:
+            nx.draw_networkx_edge_labels(
+                nx_graph, pos, edge_labels=same_group_labels, ax=ax,
+                font_size=8, font_color='white',
+                bbox=dict(boxstyle='round,pad=0.15', facecolor='#1a1a2e', edgecolor='none', alpha=0.8)
+            )
+
+    # Draw edge labels (similarity %) for MST
+    if show_edge_labels and not color_by_group:
         edge_labels = {}
         for (u, v), w in edge_weights.items():
             similarity_pct = round((1 - w) * 100, 1)
@@ -248,13 +287,14 @@ def _draw_graph(ax, nx_graph, pos, node_groups, group_colors, input_label, title
 
 
 def _render_single_graph(nx_graph, pos, node_groups, group_colors, input_label,
-                         title, subtitle, output_dir, prefix, show_edge_labels=True):
+                         title, subtitle, output_dir, prefix, show_edge_labels=True,
+                         color_by_group=False):
     """Render a single graph to its own PNG file."""
     fig, ax = plt.subplots(1, 1, figsize=(14, 10))
     fig.patch.set_facecolor('#1a1a2e')
 
     _draw_graph(ax, nx_graph, pos, node_groups, group_colors, input_label,
-                title, show_edge_labels=show_edge_labels)
+                title, show_edge_labels=show_edge_labels, color_by_group=color_by_group)
 
     # Edge count subtitle
     ax.text(0.5, -0.02, subtitle,
@@ -312,11 +352,11 @@ def visualize_graphs(complete_graph, mst, input_label, top_matches, output_dir="
     for key in pos_mst:
         pos_mst[key] = pos_mst[key] * 2.5
 
-    # Render complete graph
+    # Render complete graph with same-group edges highlighted
     complete_file = _render_single_graph(
         nx_complete, pos_complete, node_groups, group_colors, input_label,
         "Complete Graph (All Edges)", f"{complete_edge_count} edges",
-        output_dir, "complete", show_edge_labels=False
+        output_dir, "complete", show_edge_labels=False, color_by_group=True
     )
 
     # Render MST graph with its own layout
