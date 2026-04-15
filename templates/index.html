@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DNA Sequence Analyzer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <h1>DNA Sequence Analyzer</h1>
+    </header>
+
+    <!-- Input Section -->
+    <main>
+        <section class="input-section">
+            <h2>Enter Your DNA Sequence</h2>
+            <form method="POST" action="/analyze" id="dna-form">
+                <textarea
+                    name="dna_sequence"
+                    placeholder="Paste your DNA sequence here (A, T, G, C only)..."
+                    rows="5"
+                >{{ input_sequence }}</textarea>
+
+                {% if error %}
+                <div class="error-message">{{ error }}</div>
+                {% endif %}
+
+                <div class="button-wrapper">
+                    <button type="submit" id="analyze-btn">Analyze Sequence</button>
+                </div>
+            </form>
+        </section>
+
+        {% if results %}
+        <!-- Results Dashboard -->
+        <section class="results-dashboard" id="results-dashboard">
+
+            <!-- Card 1: GC Content Summary -->
+            <div class="card gc-card card-visible" data-reveal="1">
+                <h3>GC Content Analysis</h3>
+                <div class="gc-summary">
+                    <div class="gc-stat">
+                        <span class="stat-value">{{ results.input_gc }}%</span>
+                        <span class="stat-label">Your GC Content</span>
+                    </div>
+                    <div class="gc-stat">
+                        <span class="stat-value">&plusmn;{{ results.gc_threshold }}pp</span>
+                        <span class="stat-label">Filter Threshold</span>
+                    </div>
+                    <div class="gc-stat">
+                        <span class="stat-value">{{ results.filtered_count }} / {{ results.total_sequences }}</span>
+                        <span class="stat-label">Candidates Passed</span>
+                    </div>
+                </div>
+
+                <!-- GC Content Bar -->
+                <div class="gc-bar-container">
+                    <div class="gc-bar-label">GC Content: {{ results.input_gc }}%</div>
+                    <div class="gc-bar-track">
+                        <div class="gc-bar-fill" style="width: {{ results.input_gc }}%"></div>
+                    </div>
+                    <div class="gc-bar-scale">
+                        <span>0%</span>
+                        <span>25%</span>
+                        <span>50%</span>
+                        <span>75%</span>
+                        <span>100%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 2: Sorted Sequences -->
+            <div class="card sort-card card-visible" data-reveal="2">
+                <h3>Sequences Sorted by GC Content</h3>
+                <p class="card-description">
+                    All {{ results.total_sequences }} database sequences sorted by GC content.
+                    <span class="highlight-included">Green</span> = within &plusmn;{{ results.gc_threshold }}pp threshold.
+                    <span class="highlight-excluded">Gray</span> = excluded.
+                </p>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Species</th>
+                                <th>Common Name</th>
+                                <th>Group</th>
+                                <th>GC Content</th>
+                                <th>Difference</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for entry in results.sorted_sequences %}
+                            <tr class="{{ 'row-included' if entry.gc_filtered else 'row-excluded' }}">
+                                <td>{{ loop.index }}</td>
+                                <td class="species-name">{{ entry.species }}</td>
+                                <td>{{ entry.common_name }}</td>
+                                <td><span class="group-badge group-{{ entry.group|lower }}">{{ entry.group }}</span></td>
+                                <td>{{ "%.2f"|format(entry.gc_content * 100) }}%</td>
+                                <td>{{ entry.gc_difference }}pp</td>
+                                <td>
+                                    {% if entry.gc_filtered %}
+                                    <span class="status-pass">Included</span>
+                                    {% else %}
+                                    <span class="status-fail">Excluded</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Card 3: Similarity Ranking -->
+            <div class="card lcs-card card-visible" data-reveal="3">
+                <h3>Similarity Ranking</h3>
+                {% if results.lcs_results|length > 0 %}
+                <p class="card-description">
+                    Compared against {{ results.lcs_results|length }} candidates.
+                </p>
+
+                <!-- Similarity Bars -->
+                <div class="similarity-bars">
+                    {% for match in results.lcs_results %}
+                    <div class="sim-bar-row">
+                        <div class="sim-bar-label">
+                            <span class="sim-species">{{ match.common_name }}</span>
+                            <span class="sim-score">{{ "%.1f"|format(match.lcs_score * 100) }}%</span>
+                        </div>
+                        <div class="sim-bar-track">
+                            <div class="sim-bar-fill {% if loop.index == 1 %}sim-bar-best{% endif %}"
+                                 style="width: {{ match.lcs_score * 100 }}%"></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="no-results">No candidates passed the GC content filter. Try a different sequence.</p>
+                {% endif %}
+            </div>
+
+            <!-- Card 4: Complete Graph -->
+            {% if results.complete_image %}
+            <div class="card mst-card card-visible" data-reveal="4">
+                <h3>Complete Similarity Graph</h3>
+                <p class="card-description">
+                    All pairwise connections between your input and the top {{ results.lcs_results[:8]|length }} matches.
+                </p>
+                <div class="mst-image-container">
+                    <img src="{{ url_for('static', filename='graphs/' + results.complete_image) }}"
+                         alt="Complete Graph">
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Card 5: Closest Match -->
+            {% if results.best_match %}
+            <div class="card lcs-card card-visible" data-reveal="5">
+                <div class="best-match">
+                    <div class="best-match-label">Closest Match</div>
+                    <div class="best-match-info">
+                        <span class="best-match-name">{{ results.best_match.common_name }}</span>
+                        <span class="best-match-species">({{ results.best_match.species }})</span>
+                        <span class="best-match-score">{{ "%.1f"|format(results.best_match.lcs_score * 100) }}%</span>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Card 6: MST Graph -->
+            {% if results.mst_image %}
+            <div class="card mst-card card-visible" data-reveal="6">
+                <h3>After Prim's MST</h3>
+                <p class="card-description">
+                    Minimum spanning tree showing the strongest relationships.
+                    Edge labels show similarity percentages.
+                </p>
+                <div class="mst-image-container">
+                    <img src="{{ url_for('static', filename='graphs/' + results.mst_image) }}"
+                         alt="MST Graph">
+                </div>
+
+                <!-- MST Edges Table -->
+                <h4>Tree Edges</h4>
+                <div class="table-wrapper">
+                    <table class="mst-table">
+                        <thead>
+                            <tr>
+                                <th>From</th>
+                                <th>To</th>
+                                <th>Weight</th>
+                                <th>Similarity</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for v1, v2, weight in results.mst_edges %}
+                            <tr>
+                                <td>{{ v1 }}</td>
+                                <td>{{ v2 }}</td>
+                                <td>{{ "%.4f"|format(weight) }}</td>
+                                <td>{{ "%.1f"|format((1 - weight) * 100) }}%</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Card 7: Biological Insight -->
+            {% if results.insight %}
+            <div class="card insight-card card-visible" data-reveal="7">
+                <h3>Biological Insight</h3>
+                <div class="insight-headline insight-{{ results.insight.strength }}">
+                    {{ results.insight.headline }}
+                </div>
+                <ul class="insight-details">
+                    {% for detail in results.insight.details %}
+                    <li>{{ detail }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+        </section>
+        {% endif %}
+    </main>
+
+    <footer>
+        <p>DNA Sequence Analyzer — Design and Analysis of Algorithms Project</p>
+        <p>Data source: NCBI GenBank COI barcode sequences</p>
+    </footer>
+
+
+</body>
+</html>

@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+static/graphs/*.png
+.claude/
+CLAUDE.md
+.DS_Store

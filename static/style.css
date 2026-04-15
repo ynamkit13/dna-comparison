@@ -1,0 +1,570 @@
+/* DNA Sequence Analyzer — Colorful Dashboard Style */
+
+/* Reset and base */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+    background-color: #F0F2F5;
+    color: #333;
+    line-height: 1.6;
+}
+
+/* Header */
+header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem;
+    text-align: center;
+}
+
+header h1 {
+    font-size: 2rem;
+}
+
+/* Main content */
+main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+}
+
+/* Input section */
+.input-section {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.input-section h2 {
+    margin-bottom: 1rem;
+    color: #444;
+}
+
+textarea {
+    width: 100%;
+    padding: 1rem;
+    font-family: 'Courier New', monospace;
+    font-size: 0.95rem;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    resize: vertical;
+    background: #FAFAFA;
+    letter-spacing: 1px;
+}
+
+textarea:focus {
+    outline: none;
+    border-color: #667eea;
+    background: white;
+}
+
+.button-wrapper {
+    text-align: center;
+}
+
+button[type="submit"] {
+    display: inline-block;
+    margin-top: 1rem;
+    padding: 0.8rem 2.5rem;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.05rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+
+button[type="submit"]:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.error-message {
+    background: #FFF0F0;
+    color: #D32F2F;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    margin-top: 0.75rem;
+    border-left: 4px solid #D32F2F;
+}
+
+/* ========== Process Steps Animation ========== */
+.process-steps {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    transition: opacity 0.5s ease, max-height 0.5s ease;
+    overflow: hidden;
+}
+
+.process-steps.process-done {
+    opacity: 0.4;
+    max-height: 60px;
+    padding: 0.75rem 2rem;
+}
+
+.step {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0;
+    opacity: 0.35;
+    transition: opacity 0.4s ease;
+}
+
+.step.step-done {
+    opacity: 1;
+}
+
+.step-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #E8E8E8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    transition: background 0.3s ease, color 0.3s ease;
+}
+
+.step-done .step-icon {
+    background: #4CAF50;
+    color: white;
+}
+
+.step-text {
+    font-size: 0.9rem;
+    color: #555;
+}
+
+.step-done .step-text {
+    color: #333;
+    font-weight: 500;
+}
+
+/* Spinner */
+.spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid #ccc;
+    border-top-color: #667eea;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ========== Results Dashboard ========== */
+.results-dashboard {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+/* Cards — hidden by default, revealed by JS */
+.reveal-card {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.reveal-card.card-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Cards */
+.card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem 2rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.card h3 {
+    font-size: 1.2rem;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.card h4 {
+    font-size: 1rem;
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+    color: #555;
+}
+
+.card-description {
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+}
+
+/* GC Card */
+.gc-card h3 { border-bottom-color: #4ECDC4; }
+
+.gc-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.gc-stat {
+    text-align: center;
+    background: #F8F9FA;
+    padding: 1rem;
+    border-radius: 8px;
+}
+
+.stat-value {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #4ECDC4;
+}
+
+.stat-label {
+    display: block;
+    font-size: 0.8rem;
+    color: #888;
+    margin-top: 0.25rem;
+}
+
+.gc-bar-container {
+    margin-top: 1rem;
+}
+
+.gc-bar-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+}
+
+.gc-bar-track {
+    height: 24px;
+    background: #E8E8E8;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.gc-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4ECDC4, #44A08D);
+    border-radius: 12px;
+    transition: width 0.5s ease;
+}
+
+.gc-bar-scale {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: #999;
+    margin-top: 0.25rem;
+}
+
+/* Sort Card */
+.sort-card h3 { border-bottom-color: #FF6B6B; }
+
+.highlight-included {
+    color: #2E7D32;
+    font-weight: 600;
+}
+
+.highlight-excluded {
+    color: #999;
+    font-weight: 600;
+}
+
+.table-wrapper {
+    overflow-x: auto;
+    max-height: 400px;
+    overflow-y: auto;
+    margin-top: 0.5rem;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+
+thead th {
+    background: #F8F9FA;
+    padding: 0.6rem 0.8rem;
+    text-align: left;
+    font-weight: 600;
+    color: #555;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+tbody td {
+    padding: 0.5rem 0.8rem;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.species-name {
+    font-style: italic;
+}
+
+.row-included {
+    background: #F0FFF0;
+}
+
+.row-excluded {
+    color: #999;
+    background: #FAFAFA;
+}
+
+.status-pass {
+    color: #2E7D32;
+    font-weight: 600;
+    font-size: 0.8rem;
+}
+
+.status-fail {
+    color: #999;
+    font-size: 0.8rem;
+}
+
+/* Group badges */
+.group-badge {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.group-mammals { background: #FFE0E0; color: #C62828; }
+.group-birds { background: #E0F7FA; color: #00838F; }
+.group-fish { background: #E3F2FD; color: #1565C0; }
+.group-insects { background: #E8F5E9; color: #2E7D32; }
+.group-reptiles { background: #FFF9C4; color: #F9A825; }
+.group-amphibians { background: #F3E5F5; color: #7B1FA2; }
+
+/* LCS Card */
+.lcs-card h3 { border-bottom-color: #FF8C00; }
+
+.best-match {
+    background: linear-gradient(135deg, #FFF8E1, #FFF3E0);
+    border: 2px solid #FFB300;
+    border-radius: 10px;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.best-match-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #FF8F00;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 0.3rem;
+}
+
+.best-match-info {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.best-match-name {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #E65100;
+}
+
+.best-match-species {
+    font-size: 0.9rem;
+    font-style: italic;
+    color: #888;
+}
+
+.best-match-score {
+    margin-left: auto;
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: #FF6D00;
+}
+
+/* Similarity bars */
+.similarity-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.sim-bar-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.sim-bar-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+}
+
+.sim-species {
+    font-weight: 500;
+}
+
+.sim-score {
+    font-weight: 700;
+    color: #FF8C00;
+}
+
+.sim-bar-track {
+    height: 18px;
+    background: #F0F0F0;
+    border-radius: 9px;
+    overflow: hidden;
+}
+
+.sim-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #FFB74D, #FF8C00);
+    border-radius: 9px;
+    transition: width 0.5s ease;
+}
+
+.sim-bar-best {
+    background: linear-gradient(90deg, #FF8C00, #E65100);
+}
+
+/* MST Card */
+.mst-card h3 { border-bottom-color: #667eea; }
+
+.mst-image-container {
+    text-align: center;
+    margin: 1rem 0;
+}
+
+.mst-image-container img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+}
+
+.mst-table {
+    margin-top: 0.5rem;
+}
+
+.no-results {
+    color: #999;
+    font-style: italic;
+    padding: 2rem;
+    text-align: center;
+}
+
+/* Insight Card */
+.insight-card h3 { border-bottom-color: #9C27B0; }
+
+.insight-headline {
+    font-size: 1.4rem;
+    font-weight: 700;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+.insight-exact {
+    background: linear-gradient(135deg, #E8F5E9, #C8E6C9);
+    color: #2E7D32;
+    border-left: 4px solid #4CAF50;
+}
+
+.insight-strong {
+    background: linear-gradient(135deg, #E3F2FD, #BBDEFB);
+    color: #1565C0;
+    border-left: 4px solid #2196F3;
+}
+
+.insight-moderate {
+    background: linear-gradient(135deg, #FFF8E1, #FFECB3);
+    color: #F57F17;
+    border-left: 4px solid #FFC107;
+}
+
+.insight-weak {
+    background: linear-gradient(135deg, #FFF3E0, #FFE0B2);
+    color: #E65100;
+    border-left: 4px solid #FF9800;
+}
+
+.insight-none {
+    background: linear-gradient(135deg, #FFEBEE, #FFCDD2);
+    color: #C62828;
+    border-left: 4px solid #F44336;
+}
+
+.insight-details {
+    list-style: none;
+    padding: 0;
+}
+
+.insight-details li {
+    padding: 0.5rem 0;
+    padding-left: 1.25rem;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: #444;
+    position: relative;
+}
+
+.insight-details li:last-child {
+    border-bottom: none;
+}
+
+.insight-details li::before {
+    content: "\2022";
+    color: #9C27B0;
+    font-weight: 700;
+    position: absolute;
+    left: 0;
+}
+
+/* Footer */
+footer {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: #999;
+    font-size: 0.85rem;
+}
+
+footer p {
+    margin-bottom: 0.25rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    header h1 { font-size: 1.5rem; }
+    .card { padding: 1rem; }
+    .gc-summary { grid-template-columns: repeat(2, 1fr); }
+    .best-match-score { margin-left: 0; }
+}
