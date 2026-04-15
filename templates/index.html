@@ -30,8 +30,18 @@
 
                 <div class="button-wrapper">
                     <button type="submit" id="analyze-btn">Analyze Sequence</button>
+                    <div class="loading-spinner" id="loading" style="display: none;">
+                        <div class="spinner-circle"></div>
+                        <span>Analyzing sequence...</span>
+                    </div>
                 </div>
             </form>
+            <script>
+                document.getElementById('dna-form').addEventListener('submit', function() {
+                    document.getElementById('analyze-btn').style.display = 'none';
+                    document.getElementById('loading').style.display = 'flex';
+                });
+            </script>
         </section>
 
         {% if results %}
